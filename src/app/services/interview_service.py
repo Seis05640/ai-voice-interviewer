@@ -9,6 +9,7 @@ from app.domain.policies.interview_policy import (
     plan_from_json,
     plan_to_json,
 )
+from app.persistence.repositories.candidate_repo import CandidateRepository
 from app.persistence.repositories.interview_repo import InterviewRepository
 from app.persistence.repositories.job_repo import JobRepository
 
@@ -16,11 +17,14 @@ from app.persistence.repositories.job_repo import JobRepository
 class InterviewService:
     def __init__(self, session: Session) -> None:
         self._jobs = JobRepository(session)
+        self._candidates = CandidateRepository(session)
         self._interviews = InterviewRepository(session)
 
     def start_session(self, *, job_id: str, candidate_id: str) -> dict:
         job = self._jobs.get_required(job_id)
-        plan = build_interview_plan(job.description)
+        candidate = self._candidates.get_required(candidate_id)
+
+        plan = build_interview_plan(job.description, resume_text=candidate.resume_text)
 
         session_row = self._interviews.create_session(
             job_id=job_id,
